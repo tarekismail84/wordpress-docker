@@ -3,10 +3,10 @@
 
 
 #add docker compose path to all users#
-sudo cat /home/ec2-user/bash_profile_path.txt >> /etc/skel/.bash_profile
-sudo cat /home/ec2-user/bash_profile_path.txt >> /home/ec2-user/.bash_profile
-sudo cat /home/ec2-user/bash_profile_path.txt >> /home/ssm-user/.bash_profile
-sudo cat /home/ec2-user/bash_profile_path.txt >> /root/.bash_profile
+sudo cat /home/ec2-user/repo/bash_profile_path.txt >> /etc/skel/.bash_profile
+sudo cat /home/ec2-user/repo/bash_profile_path.txt >> /home/ec2-user/.bash_profile
+sudo cat /home/ec2-user/repo/bash_profile_path.txt >> /home/ssm-user/.bash_profile
+sudo cat /home/ec2-user/repo/bash_profile_path.txt >> /root/.bash_profile
 
 
 ##Updating yml file
