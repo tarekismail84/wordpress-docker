@@ -1,0 +1,38 @@
+#!/bin/bash
+
+
+#Update the Current Linux 2 Machine##
+yum update
+
+##Cloud Watch Installation and Configuration##
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm /home/ec2-user/
+rpm -U /home/ec2-user/amazon-cloudwatch-agent.rpm
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:varrow-cwAgent-Linux -s
+
+
+#Install hit and mysql client#
+yum install git mysql -y
+
+#Clone git repo#
+git clone https://github.com/tarekismail84/wordpress-docker.git /home/ec2-user/
+
+##make directories for websites##
+mkdir /home/ec2-user/website1
+
+##Add NFS mount in fstab##
+echo "fs-0c789765472e31272.efs.eu-west-1.amazonaws.com:/ /home/ec2-user/website1 nfs4 defaults,_netdev 0 0" >> /etc/fstab
+## mount all unmounted volumes##
+mount -a
+
+##copy docker compose file##
+sudo cp /home/ec2-user/docker-compose.yml /home/ec2-user/website1/docker-compose.yml
+
+##Setting variables for wordpress database configuration##
+wp_db=$(aws ssm get-parameter --name "wpdb-name-docker" --region eu-west-1  --with-decryption --output text --query Parameter.Value)
+wp_pw=$(aws ssm get-parameter --name "wpdb-password-docker" --region eu-west-1  --with-decryption --output text --query Parameter.Value)
+wp_un=$(aws ssm get-parameter --name "wpdb-username-docker" --region eu-west-1  --with-decryption --output text --query Parameter.Value)
+wp_dns=$"varrowdb.cg0yjt5zptke.eu-west-1.rds.amazonaws.com"
+
+#preparing and running configuration script##
+chmod +x /home/ec2-user/config.sh 
+/home/ec2-user/config.sh $wp_db $wp_un $wp_pw $wp_dns
