@@ -5,7 +5,7 @@
 yum update
 
 ##Cloud Watch Installation and Configuration##
-wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm /home/ec2-user/
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm -P /home/ec2-user/
 rpm -U /home/ec2-user/amazon-cloudwatch-agent.rpm
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c ssm:varrow-cwAgent-Linux -s
 
@@ -14,7 +14,7 @@ rpm -U /home/ec2-user/amazon-cloudwatch-agent.rpm
 yum install git mysql -y
 
 #Clone git repo#
-git clone https://github.com/tarekismail84/wordpress-docker.git /home/ec2-user/
+git clone https://github.com/tarekismail84/wordpress-docker.git /home/ec2-user/repo
 
 ##make directories for websites##
 mkdir /home/ec2-user/website1
@@ -25,7 +25,30 @@ echo "fs-0c789765472e31272.efs.eu-west-1.amazonaws.com:/ /home/ec2-user/website1
 mount -a
 
 ##copy docker compose file##
-sudo cp /home/ec2-user/docker-compose.yml /home/ec2-user/website1/docker-compose.yml
+sudo cp /home/ec2-user/repo/docker-compose.yml /home/ec2-user/website1/docker-compose.yml
+
+#Change user to ec2-user#
+sudo su ec2-user
+
+#Install docker, run#
+sudo yum install docker -y
+
+
+#Add group membership for the default ec2-user so you can run all docker commands without using the sudo command#
+sudo usermod -a -G docker ec2-user
+id ec2-user
+
+# Reload a Linux user's group assignments to docker w/o logout#
+newgrp docker
+
+#docker-compose installation#
+wget https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) 
+sudo mv docker-compose-$(uname -s)-$(uname -m) /usr/local/bin/docker-compose
+sudo chmod -v +x /usr/local/bin/docker-compose
+
+##enable auto start and enable docker service##
+sudo systemctl enable --now docker.service
+
 
 ##Setting variables for wordpress database configuration##
 wp_db=$(aws ssm get-parameter --name "wpdb-name-docker" --region eu-west-1  --with-decryption --output text --query Parameter.Value)
@@ -34,5 +57,6 @@ wp_un=$(aws ssm get-parameter --name "wpdb-username-docker" --region eu-west-1  
 wp_dns=$"varrowdb.cg0yjt5zptke.eu-west-1.rds.amazonaws.com"
 
 #preparing and running configuration script##
-chmod +x /home/ec2-user/config.sh 
-/home/ec2-user/config.sh $wp_db $wp_un $wp_pw $wp_dns
+chmod +x /home/ec2-user/repo/config.sh 
+cd /home/ec2-user/repo
+./config.sh $wp_db $wp_un $wp_pw $wp_dns
